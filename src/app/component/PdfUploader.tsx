@@ -1,114 +1,81 @@
-import React from "react";
-import { useEffect, useRef } from "react";
+import { useState } from "react";
+import { savePDF, getPDF } from "../lib/idb";
 
-const PDFUploader: React.FC = () => {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+export default function Home() {
+  const [pdfName, setPdfName] = useState("");
+  const [file, setFile] = useState(null);
+  const [retrievedPDF, setRetrievedPDF] = useState(null);
 
-  useEffect(() => {
-    if (!fileInputRef.current) return;
-
-    const handleFileChange = (event: Event) => {
-      const input = event.target as HTMLInputElement;
-      if (input.files && input.files[0]) {
-        storePDF(input.files[0]);
-      }
-    };
-
-    fileInputRef.current.addEventListener("change", handleFileChange);
-
-    return () => {
-      if (fileInputRef.current) {
-        fileInputRef.current.removeEventListener("change", handleFileChange);
-      }
-    };
-  }, []);
-
-  const openDatabase = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
-      const request: IDBOpenDBRequest = indexedDB.open("PDFStore", 1);
-
-      request.onupgradeneeded = function (event) {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains("pdfs")) {
-          db.createObjectStore("pdfs", { keyPath: "id" });
-        }
-      };
-
-      request.onsuccess = function (event) {
-        resolve((event.target as IDBOpenDBRequest).result);
-      };
-
-      request.onerror = function (event) {
-        reject(
-          "Database error: " + (event.target as IDBOpenDBRequest).error?.message
-        );
-      };
-    });
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
   };
 
-  const storePDF = (file: File): void => {
-    openDatabase().then((db) => {
-      // Start the transaction after the file is read
-      const reader = new FileReader();
-
-      reader.onload = function () {
-        const pdfData = reader.result as ArrayBuffer;
-        const pdf = {
-          id: "myPdf",
-          data: pdfData,
-        };
-
-        const transaction = db.transaction(["pdfs"], "readwrite");
-        const objectStore = transaction.objectStore("pdfs");
-
-        const request = objectStore.add(pdf);
-        request.onsuccess = () => {
-          console.log("PDF stored successfully");
-        };
-        request.onerror = (event) => {
-          console.error(
-            "Error storing PDF:",
-            (event.target as IDBRequest).error?.message
-          );
-        };
-      };
-
-      reader.readAsArrayBuffer(file);
-    });
+  const handleSave = async () => {
+    if (file && pdfName) {
+      try {
+        await savePDF(pdfName, file);
+        alert("PDF saved successfully!");
+      } catch (error) {
+        alert("Error saving PDF: " + error);
+      }
+    } else {
+      alert("Please provide a name and select a file.");
+    }
   };
 
-  const getPDF = (): void => {
-    openDatabase().then((db) => {
-      const transaction = db.transaction(["pdfs"], "readonly");
-      const objectStore = transaction.objectStore("pdfs");
-      const request = objectStore.get("myPdf");
-
-      request.onsuccess = function (event) {
-        const pdf = (event.target as IDBRequest).result;
-        if (pdf) {
-          const blob = new Blob([pdf.data], { type: "application/pdf" });
-          const url = URL.createObjectURL(blob);
-          window.open(url);
-        } else {
-          console.log("PDF not found in the database.");
-        }
-      };
-
-      request.onerror = function (event) {
-        console.error(
-          "Error retrieving PDF:",
-          (event.target as IDBRequest).error?.message
-        );
-      };
-    });
+  const handleRetrieve = async () => {
+    try {
+      const result = await getPDF(pdfName);
+      if (result) {
+        console.log(pdfName);
+        const url = URL.createObjectURL(result.file);
+        setRetrievedPDF(url);
+      } else {
+        alert("No PDF found with that name.");
+      }
+    } catch (error) {
+      alert("Error retrieving PDF: " + error);
+    }
   };
 
   return (
-    <div>
-      <input type="file" ref={fileInputRef} />
-      <button onClick={getPDF}>View PDF</button>
+    <div style={{ padding: "20px" }}>
+      <h1>PDF Storage App</h1>
+
+      <div style={{ marginBottom: "20px" }} className="">
+        <input
+          className=""
+          type="text"
+          placeholder="Enter PDF name"
+          value={pdfName}
+          onChange={(e) => setPdfName(e.target.value)}
+        ></input>
+      </div>
+
+      <div style={{ marginBottom: "20px" }} className="">
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className=""
+        ></input>
+      </div>
+
+      <button onClick={handleSave} style={{ marginRight: "10px" }}>
+        Save PDF
+      </button>
+      <button onClick={handleRetrieve}>Retrieve PDF</button>
+
+      {retrievedPDF && (
+        <div style={{ marginTop: "20px" }}>
+          <h2>Retrieved PDF:</h2>
+          <iframe
+            src={retrievedPDF}
+            width="600"
+            height="400"
+            className=""
+          ></iframe>
+        </div>
+      )}
     </div>
   );
-};
-
-export default PDFUploader;
+}
