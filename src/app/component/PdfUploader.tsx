@@ -66,12 +66,12 @@ export default function Home() {
       <button onClick={handleRetrieve}>Retrieve PDF</button>
 
       {retrievedPDF && (
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginTop: "50px" }}>
           <h2>Retrieved PDF:</h2>
           <iframe
             src={retrievedPDF}
-            width="600"
-            height="400"
+            width="800"
+            height="600"
             className=""
           ></iframe>
         </div>
