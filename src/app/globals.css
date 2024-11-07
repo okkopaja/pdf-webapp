@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+<<<<<<< HEAD
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -31,3 +32,5 @@ body {
     text-wrap: balance;
   }
 }
+=======
+>>>>>>> 2d0da3f94db66df93e1c37effcbac2a697b670af
