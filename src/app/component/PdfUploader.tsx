@@ -1,11 +1,10 @@
 "use client";
-import { useState, ChangeEvent } from "react";
-import { getPDF, addPDF } from "../lib/idb"; // Assuming these are imported functions
+import { useState, } from "react";
+import { getPDF, } from "../lib/db"; // Assuming these are imported functions
 
 export default function Home() {
   const [pdfName, setPdfName] = useState<string>("");
   const [file, setFile] = useState<File>(null); // Nullable File
-  const [retrievedPDF, setRetrievedPDF] = useState<string | null>(null); // Nullable URL for retrieved PDF
   const [pdfData, setPdfData] = useState<string | null>(null);
   // Event handler for file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
