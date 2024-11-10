@@ -1,81 +1,70 @@
-import { useState } from "react";
-import { savePDF, getPDF } from "../lib/idb";
+"use client";
+import { useState, ChangeEvent } from "react";
+import { getPDF, addPDF } from "../lib/idb"; // Assuming these are imported functions
 
 export default function Home() {
-  const [pdfName, setPdfName] = useState("");
-  const [file, setFile] = useState(null);
-  const [retrievedPDF, setRetrievedPDF] = useState(null);
-
-  const handleFileChange = (event) => {
-    setFile(event.target.files[0]);
-  };
-
-  const handleSave = async () => {
-    if (file && pdfName) {
-      try {
-        await savePDF(pdfName, file);
-        alert("PDF saved successfully!");
-      } catch (error) {
-        alert("Error saving PDF: " + error);
-      }
-    } else {
-      alert("Please provide a name and select a file.");
+  const [pdfName, setPdfName] = useState<string>("");
+  const [file, setFile] = useState<File>(null); // Nullable File
+  const [retrievedPDF, setRetrievedPDF] = useState<string | null>(null); // Nullable URL for retrieved PDF
+  const [pdfData, setPdfData] = useState<string | null>(null);
+  // Event handler for file input change
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setFile(event.target.files[0]);
     }
   };
-
+  // Handle retrieve button click
   const handleRetrieve = async () => {
-    try {
-      const result = await getPDF(pdfName);
-      if (result) {
-        console.log(pdfName);
-        const url = URL.createObjectURL(result.file);
-        setRetrievedPDF(url);
+    const res = await getPDF(pdfName).then((res) => {
+      if (res === "error") {
+        alert("File not found");
       } else {
-        alert("No PDF found with that name.");
+        setPdfData(res);
       }
-    } catch (error) {
-      alert("Error retrieving PDF: " + error);
-    }
+    });
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("name", pdfName);
+    formData.append("file", file);
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    alert("File uploaded successfully");
   };
 
   return (
     <div style={{ padding: "20px" }}>
       <h1>PDF Storage App</h1>
 
-      <div style={{ marginBottom: "20px" }} className="">
+      <div style={{ marginBottom: "20px" }}>
         <input
-          className=""
           type="text"
           placeholder="Enter PDF name"
           value={pdfName}
           onChange={(e) => setPdfName(e.target.value)}
-        ></input>
+        />
       </div>
 
-      <div style={{ marginBottom: "20px" }} className="">
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className=""
-        ></input>
+      <div style={{ marginBottom: "20px" }}>
+        <input type="file" onChange={handleFileChange} />
       </div>
 
-      <button onClick={handleSave} style={{ marginRight: "10px" }}>
+      <button onClick={handleUpload} style={{ marginRight: "10px" }}>
         Save PDF
       </button>
-      <button onClick={handleRetrieve}>Retrieve PDF</button>
-
-      {retrievedPDF && (
-        <div style={{ marginTop: "50px" }}>
-          <h2>Retrieved PDF:</h2>
-          <iframe
-            src={retrievedPDF}
-            width="800"
-            height="600"
-            className=""
-          ></iframe>
-        </div>
-      )}
+      <button onClick={handleRetrieve} style={{ marginRight: "10px" }}>
+        Retrieve PDF
+      </button>
+      <embed
+        src={`data:application/pdf;base64,${pdfData}`}
+        width="600"
+        height="800"
+        type="application/pdf"
+      />
     </div>
   );
 }
