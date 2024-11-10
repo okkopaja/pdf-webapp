@@ -1,6 +1,6 @@
 "use client";
-import { useState, } from "react";
-import { getPDF, } from "../lib/db"; // Assuming these are imported functions
+import { useState } from "react";
+import { getPDF } from "../lib/db"; // Assuming these are imported functions
 
 export default function Home() {
   const [pdfName, setPdfName] = useState<string>("");
@@ -58,12 +58,16 @@ export default function Home() {
       <button onClick={handleRetrieve} style={{ marginRight: "10px" }}>
         Retrieve PDF
       </button>
-      <embed
-        src={`data:application/pdf;base64,${pdfData}`}
-        width="600"
-        height="800"
-        type="application/pdf"
-      />
+      {pdfData ? (
+        <embed
+          src={`data:application/pdf;base64,${pdfData}`}
+          width="600"
+          height="800"
+          type="application/pdf"
+        />
+      ) : (
+        <></>
+      )}
     </div>
   );
 }
